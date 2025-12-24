@@ -1,15 +1,51 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&family=Poppins:wght@400;600;700&display=swap');
 @import "tailwindcss";
-@theme{
+
+@theme {
   --color-primary: #F84565;
   --color-primary-dull: #D63854
 }
-*{
+
+* {
   font-family: "Outfit", sans-serif;
   scrollbar-width: thin;
   scrollbar-color: #787777 #1e1e1e;
 }
-body{
+
+body {
   color: white;
-  background-color: #09090B;
+  background-color: black;
+  /* Global Breathing Purple Background */
+  background-image:
+    radial-gradient(circle at 50% 50%, rgba(76, 29, 149, 0.15) 0%, transparent 50%),
+    radial-gradient(circle at 0% 0%, rgba(236, 72, 153, 0.1) 0%, transparent 40%),
+    radial-gradient(circle at 100% 100%, rgba(99, 102, 241, 0.1) 0%, transparent 40%);
+  background-size: 200% 200%;
+  animation: breathe 15s ease infinite;
+}
+
+@keyframes breathe {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.glass-card {
+  @apply bg-white/5 backdrop-blur-md border border-white/10 shadow-lg;
+}
+
+.glass-panel {
+  @apply bg-black/40 backdrop-blur-xl border border-white/5 shadow-2xl;
+}
+
+.no-scrollbar {
+  scrollbar-width: none;
 }

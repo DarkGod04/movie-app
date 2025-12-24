@@ -1,4 +1,4 @@
-import React, { useState } from 'react' 
+import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { assets } from '../assets/assets'
 import { SearchIcon, XIcon, MenuIcon, TicketPlus } from 'lucide-react'
@@ -6,39 +6,51 @@ import { useClerk, UserButton, useUser } from '@clerk/clerk-react'
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false)
-  const {user}= useUser()
-  const {openSignIn}= useClerk()
-  const navigate =useNavigate()
+  const { user } = useUser()
+  const { openSignIn } = useClerk()
+  const navigate = useNavigate()
+
   return (
-    <div className='fixed top-0 left-0 z-50 w-full flex items-center justify-between px-6 md:px-16 lg:px-36 py-5'>
-      
-      <Link to='/'>
-        <img src={assets.logo} alt="Logo" className='w-36 h-auto' />
+    <div className='fixed top-0 left-0 z-50 w-full flex items-center justify-between px-6 md:px-16 lg:px-36 py-4 bg-black/50 backdrop-blur-md border-b border-white/5'>
+
+      <Link to='/' className='relative group'>
+        <img src={assets.logo} alt="Logo" className='w-32 md:w-40 h-auto hover:opacity-90 transition-opacity' />
       </Link>
 
       <div
-        className={`max-md:absolute max-md:top-0 max-md:left-0 max-md:font-medium max-md:text-lg z-50 flex flex-col md:flex-row items-center max-md:justify-center gap-8 md:px-8 py-3 max-md:h-screen md:rounded-full backdrop-blur bg-black/70 md:bg-white/10 md:border border-gray-300/20 overflow-hidden transition-[width] duration-300 ${isOpen ? 'max-md:w-full' : 'max-md:w-0'}`}
+        className={`max-md:absolute max-md:top-0 max-md:left-0 max-md:font-medium max-md:text-lg z-50 flex flex-col md:flex-row items-center max-md:justify-center gap-10 md:gap-8 max-md:h-screen max-md:bg-black/95 transition-[width] duration-300 ${isOpen ? 'max-md:w-full' : 'max-md:w-0 overflow-hidden'}`}
       >
         <XIcon
-          className='md:hidden absolute top-6 right-6 w-6 h-6 cursor-pointer'
+          className='md:hidden absolute top-6 right-6 w-6 h-6 cursor-pointer text-gray-400 hover:text-white'
           onClick={() => setIsOpen(false)}
         />
-        <Link onClick={() => { scrollTo(0, 0); setIsOpen(false); }} to='/'>Home</Link>
-        <Link onClick={() => { scrollTo(0, 0); setIsOpen(false); }} to='/movies'>Movies</Link>
-        <Link onClick={() => { scrollTo(0, 0); setIsOpen(false); }} to='/'>Theaters</Link>
-        <Link onClick={() => { scrollTo(0, 0); setIsOpen(false); }} to='/'>Releases</Link>
-        <Link onClick={() => { scrollTo(0, 0); setIsOpen(false); }} to='/favorite'>Favorites</Link>
+
+        {['Home', 'Movies', 'Theaters', 'Releases', 'Favorites'].map((item) => (
+          <Link
+            key={item}
+            onClick={() => { scrollTo(0, 0); setIsOpen(false); }}
+            to={item === 'Home' ? '/' : item === 'Favorites' ? '/favorite' : `/${item.toLowerCase()}`}
+            className="text-gray-300 hover:text-white hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.5)] transition-all font-light tracking-wide text-sm md:text-base uppercase"
+          >
+            {item}
+          </Link>
+        ))}
       </div>
 
-      <div className='flex items-center gap-4'>
-        <SearchIcon className='max-md:hidden w-6 h-6 cursor-pointer' />
+      <div className='flex items-center gap-6'>
+        <SearchIcon className='max-md:hidden w-5 h-5 cursor-pointer text-gray-400 hover:text-pink-500 transition-colors' />
         {
           !user ? (
-            <button onClick={openSignIn} className='px-4 py-1 sm:py-2 bg-primary hover:bg-primary-dull transition rounded-full font-medium cursor-pointer'>Login</button>
+            <button
+              onClick={openSignIn}
+              className='px-6 py-2 bg-gradient-to-r from-pink-600 via-purple-600 to-indigo-600 hover:from-pink-500 hover:to-indigo-500 text-white text-xs md:text-sm font-semibold tracking-wide uppercase rounded-full shadow-[0_0_15px_rgba(236,72,153,0.4)] hover:shadow-[0_0_25px_rgba(236,72,153,0.6)] transition-all transform hover:-translate-y-0.5'
+            >
+              Sign In
+            </button>
           ) : (
             <UserButton>
               <UserButton.MenuItems>
-                <UserButton.Action label='My Bookings' labelIcon={<TicketPlus width={15}/>} onClick={()=> navigate('/my-bookings')}/>
+                <UserButton.Action label='My Bookings' labelIcon={<TicketPlus width={15} />} onClick={() => navigate('/my-bookings')} />
               </UserButton.MenuItems>
             </UserButton>
           )
@@ -46,7 +58,7 @@ const Navbar = () => {
       </div>
 
       <MenuIcon
-        className='max-md:ml-4 md:hidden w-8 h-8 cursor-pointer'
+        className='max-md:ml-4 md:hidden w-8 h-8 cursor-pointer text-white'
         onClick={() => setIsOpen(true)}
       />
     </div>
