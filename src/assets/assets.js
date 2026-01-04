@@ -37,6 +37,46 @@ export const dummyTrailers = [
     image: "https://img.youtube.com/vi/aWzlQ2N6qqg/maxresdefault.jpg",
     videoUrl: 'https://www.youtube.com/watch?v=aWzlQ2N6qqg'
   },
+  {
+    image: "https://img.youtube.com/vi/d9MyqF3pKWI/maxresdefault.jpg",
+    videoUrl: 'https://www.youtube.com/watch?v=d9MyqF3pKWI', // Avatar: The Way of Water
+  },
+  {
+    image: "https://img.youtube.com/vi/uYPbbksJxIg/maxresdefault.jpg",
+    videoUrl: 'https://www.youtube.com/watch?v=uYPbbksJxIg', // Oppenheimer
+  },
+  {
+    image: "https://img.youtube.com/vi/pBk4NYhUOQM/maxresdefault.jpg",
+    videoUrl: 'https://www.youtube.com/watch?v=pBk4NYhUOQM', // Barbie
+  },
+  {
+    image: "https://img.youtube.com/vi/Way9Dexny3w/maxresdefault.jpg",
+    videoUrl: 'https://www.youtube.com/watch?v=Way9Dexny3w', // Dune: Part Two
+  },
+  {
+    image: "https://img.youtube.com/vi/xy8aJw1vYHg/maxresdefault.jpg",
+    videoUrl: 'https://www.youtube.com/watch?v=xy8aJw1vYHg', // Joker: Folie à Deux
+  },
+  {
+    image: "https://img.youtube.com/vi/2m1drlOZSDw/maxresdefault.jpg",
+    videoUrl: 'https://www.youtube.com/watch?v=2m1drlOZSDw', // Mission: Impossible - Dead Reckoning Part One
+  },
+  {
+    image: "https://img.youtube.com/vi/mqqft2x_Aa4/maxresdefault.jpg",
+    videoUrl: 'https://www.youtube.com/watch?v=mqqft2x_Aa4', // The Batman
+  },
+  {
+    image: "https://img.youtube.com/vi/giXco2jaZ_4/maxresdefault.jpg",
+    videoUrl: 'https://www.youtube.com/watch?v=giXco2jaZ_4', // Top Gun: Maverick
+  },
+  {
+    image: "https://img.youtube.com/vi/73_1biulkYk/maxresdefault.jpg",
+    videoUrl: 'https://www.youtube.com/watch?v=73_1biulkYk', // Deadpool & Wolverine
+  },
+  {
+    image: "https://img.youtube.com/vi/4Rgx4VIfrwY/maxresdefault.jpg",
+    videoUrl: 'https://www.youtube.com/watch?v=4Rgx4VIfrwY', // Gladiator II
+  },
 ]
 
 const dummyCastsData = [

@@ -97,6 +97,16 @@ const Movies = () => {
     return detailed;
   };
 
+  // Helper: Standardize movie object format
+  const transformMovie = (m) => ({
+    _id: m.imdbID || m.id, // Handle OMDb or generic ID
+    title: m.Title || m.title || m.name,
+    poster_path: (m.Poster && m.Poster !== "N/A") ? m.Poster : (m.image?.original || "https://via.placeholder.com/300x450?text=No+Poster"),
+    vote_average: (m.imdbRating && m.imdbRating !== "N/A") ? m.imdbRating : (m.rating?.average || "N/A"),
+    release_date: m.Year || m.premiered?.split("-")[0] || "N/A",
+    actors: m.Actors ? m.Actors.split(', ') : []
+  });
+
   // Main Search Fetch
   const fetchMovies = async (query, pageNum = 1, append = false) => {
     const queryToUse = query.trim() === "" ? "Avengers" : query;
@@ -111,16 +121,7 @@ const Movies = () => {
       if (data.Response === "True") {
         // ENRICH DATA: Get ratings for every movie in the list
         const enrichedRaw = await fetchDetailedMovies(data.Search);
-
-        const transformed = enrichedRaw.map(m => ({
-          _id: m.imdbID,
-          id: m.imdbID,
-          title: m.Title,
-          poster_path: m.Poster !== "N/A" ? m.Poster : "https://via.placeholder.com/300x450?text=No+Poster",
-          vote_average: m.imdbRating !== "N/A" ? m.imdbRating : "N/A", // Use real rating!
-          release_date: m.Year,
-          actors: m.Actors ? m.Actors.split(', ') : [] // Added actors
-        }));
+        const transformed = enrichedRaw.map(transformMovie);
 
         if (append) {
           setMovies(prev => {
@@ -155,11 +156,15 @@ const Movies = () => {
   // Initial Load: Fetch 3 pages + Enrich + Sort
   const fetchInitialMovies = async () => {
     setLoading(true);
-    const query = "Avengers";
-    setSearchTerm(query);
+
+    const randomKeywords = ["Marvel", "Star Wars", "Harry Potter", "Batman", "Inception", "Lord of the Rings", "Matrix", "Disney", "Pixar", "Dune", "Spiderman", "James Bond", "Mission Impossible"];
+    const randomQuery = randomKeywords[Math.floor(Math.random() * randomKeywords.length)];
+
+    const query = randomQuery;
+    setSearchTerm(query); // Optional: Set search term to show user what's being displayed
 
     try {
-      console.log("Starting initial fetch...");
+      console.log(`Starting initial fetch for: ${query}`);
       const promises = [1, 2, 3].map(page =>
         fetch(`https://www.omdbapi.com/?s=${query}&apikey=${OMDB_API_KEY}&type=movie&page=${page}`)
           .then(res => res.json())
@@ -177,16 +182,7 @@ const Movies = () => {
 
       // ENRICH DATA
       const enrichedRaw = await fetchDetailedMovies(rawMovies);
-
-      const transformed = enrichedRaw.map(m => ({
-        _id: m.imdbID,
-        id: m.imdbID,
-        title: m.Title,
-        poster_path: m.Poster !== "N/A" ? m.Poster : "https://via.placeholder.com/300x450?text=No+Poster",
-        vote_average: m.imdbRating !== "N/A" ? m.imdbRating : "N/A",
-        release_date: m.Year,
-        actors: m.Actors ? m.Actors.split(', ') : []
-      }));
+      const transformed = enrichedRaw.map(transformMovie);
 
       // Deduplicate
       const uniqueMovies = Array.from(new Map(transformed.map(m => [m._id, m])).values());

@@ -12,29 +12,49 @@ const FeaturedSection = () => {
   useEffect(() => {
     const fetchFeatured = async () => {
       try {
-        // Fetching "Marvel" movies as a proxy for "Now Showing" / Popular
-        const res = await fetch(`https://www.omdbapi.com/?s=Marvel&apikey=${OMDB_API_KEY}&type=movie&y=2023`);
+        // Fetching "Marvel" movies without year restriction to get more candidates
+        const res = await fetch(`https://www.omdbapi.com/?s=Marvel&apikey=${OMDB_API_KEY}&type=movie`);
         const data = await res.json();
 
         if (data.Response === "True") {
-          // Fetch details for ratings
-          const detailedPromises = data.Search.slice(0, 5).map(async (m) => {
+          // Process concurrently but wait for results to filter effectively
+          // We fetch details for all candidates (up to 10) to ensure we have enough valid ones after filtering
+          const candidates = data.Search || [];
+
+          const detailedPromises = candidates.map(async (m) => {
             const detailRes = await fetch(`https://www.omdbapi.com/?i=${m.imdbID}&apikey=${OMDB_API_KEY}`);
             const detail = await detailRes.json();
             return {
               _id: m.imdbID,
               id: m.imdbID,
               title: m.Title,
-              poster_path: m.Poster !== "N/A" ? m.Poster : "https://via.placeholder.com/300x450?text=No+Poster",
-              vote_average: detail.imdbRating || "N/A",
+              poster_path: m.Poster, // Keep raw poster for filtering check
+              vote_average: detail.imdbRating,
               release_date: m.Year,
               runtime: detail.Runtime !== "N/A" ? detail.Runtime.split(" ")[0] : null,
               genres: detail.Genre ? detail.Genre.split(", ").map(g => ({ name: g })) : []
             };
           });
 
-          const detailedMovies = await Promise.all(detailedPromises);
-          setMovies(detailedMovies);
+          const allDetails = await Promise.all(detailedPromises);
+
+          // Robust Filtering:
+          // 1. Must have a valid Poster (not "N/A")
+          // 2. Must not be "Untitled"
+          // 3. Must have a valid numeric rating (not "N/A")
+          const validMovies = allDetails.filter(m =>
+            m.poster_path !== "N/A" &&
+            !m.title.toLowerCase().includes("untitled") &&
+            m.vote_average !== "N/A"
+          );
+
+          // Final cleanup for display and limit to 4-5 items
+          const finalMovies = validMovies.slice(0, 5).map(m => ({
+            ...m,
+            poster_path: m.poster_path // It's already valid per filter
+          }));
+
+          setMovies(finalMovies);
         }
       } catch (err) {
         console.error("Failed to fetch featured movies:", err);

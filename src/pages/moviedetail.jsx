@@ -1,25 +1,42 @@
 import React, { useEffect, useState } from "react";
-import { dummyDateTimeData, dummyShowsData } from "../assets/assets";
-import { Heart, PlayCircleIcon, StarIcon, Clock, Calendar, Globe, Ticket } from "lucide-react";
+import { Heart, PlayCircleIcon, StarIcon, Clock, Globe, Ticket, ChevronLeft, ChevronRight } from "lucide-react";
+import { useParams, useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
+import { useAuth } from "../context/AuthContext";
+import { ensureMovieExists, ensureShowtimesForMovie, fetchTheaters, checkIsFavorite, toggleFavorite } from "../lib/db";
 import timeFormat from "../assets/lib/timeFormat";
-import { useParams } from "react-router-dom";
 
 const OMDB_API_KEY = "1e43b127";
 
 const MovieDetail = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+
+  // State
   const [show, setShow] = useState(null);
   const [notFound, setNotFound] = useState(false);
   const [omdbData, setOmdbData] = useState(null);
   const [relatedMovies, setRelatedMovies] = useState([]);
   const [isLoadingInfo, setIsLoadingInfo] = useState(true);
+  const [selectedDate, setSelectedDate] = useState(0);
+  const [isFavorite, setIsFavorite] = useState(false);
+
+  // Generate next 7 days for the date selector
+  const dates = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() + i);
+    return {
+      day: d.toLocaleDateString("en-US", { weekday: "short" }),
+      date: d.getDate(),
+      fullDate: d.toISOString().split('T')[0]
+    };
+  });
 
   const getShow = async () => {
     setIsLoadingInfo(true);
     setNotFound(false);
 
-    // 1. Fetch details directly from OMDb by ID (e.g., tt0848228)
-    // We use the 'id' from useParams, which is the OMDb ID
     const url = `https://www.omdbapi.com/?i=${id}&apikey=${OMDB_API_KEY}&plot=full`;
 
     try {
@@ -29,13 +46,11 @@ const MovieDetail = () => {
       if (data.Response === "True") {
         setOmdbData(data);
 
-        // 2. Construct a "movie" object compatible with our UI
-        // This ensures the rest of the UI (Hero, Cast, etc.) works with OMDb data
+        // 2. Local State Object (for UI)
         const movieData = {
           _id: data.imdbID,
           id: data.imdbID,
           title: data.Title,
-          // OMDb doesn't give backdrops, so we reuse poster or a default
           backdrop_path: data.Poster !== "N/A" ? data.Poster : "https://via.placeholder.com/1920x1080?text=No+Backdrop",
           poster_path: data.Poster !== "N/A" ? data.Poster : "https://via.placeholder.com/300x450?text=No+Poster",
           vote_average: data.imdbRating,
@@ -46,33 +61,60 @@ const MovieDetail = () => {
           genres: data.Genre ? data.Genre.split(',').map((g, i) => ({ id: i, name: g.trim() })) : []
         };
 
-        setShow({
-          movie: movieData,
-          dateTime: dummyDateTimeData,
-        });
+        setShow({ movie: movieData });
 
-        // 3. Fetch Related Movies (Reuse existing logic but inside this block)
+        // Check if favorite
+        if (user) {
+          try {
+            const favStatus = await checkIsFavorite(user.id, data.imdbID);
+            setIsFavorite(favStatus);
+          } catch (e) {
+            console.error("Favorite check failed", e);
+          }
+        }
+
+        // --- BACKEND INTEGRATION SCRIPT ---
+        try {
+          // A. Ensure Movie exists in DB
+          const dbMovieId = await ensureMovieExists(data);
+
+          // B. Get Theaters
+          const theaters = await fetchTheaters();
+
+          // C. Get/Generate Showtimes
+          const dateStr = dates[selectedDate].fullDate;
+          const theaterIds = theaters ? theaters.map(t => t.id) : [];
+
+          if (theaterIds.length > 0) {
+            const showtimes = await ensureShowtimesForMovie(dbMovieId, theaterIds, dateStr);
+            setShow(prev => ({ ...prev, showtimes, dbMovieId }));
+          }
+        } catch (dbError) {
+          console.error("Supabase Error:", dbError);
+        }
+
+        // Fetch Related
         const firstGenre = data.Genre ? data.Genre.split(",")[0].trim() : "Action";
-        console.log(`Fetching related movies for genre: ${firstGenre}`);
-
-        const relatedRes = await fetch(`https://www.omdbapi.com/?s=${encodeURIComponent(firstGenre)}&apikey=${OMDB_API_KEY}&type=movie`);
-        const relatedData = await relatedRes.json();
-
-        if (relatedData.Response === "True") {
-          const transformedRelated = relatedData.Search
-            .filter(m => m.imdbID !== data.imdbID)
-            .slice(0, 5)
-            .map(m => ({
-              id: m.imdbID,
-              title: m.Title,
-              poster_path: m.Poster !== "N/A" ? m.Poster : "https://via.placeholder.com/300x450?text=No+Poster",
-              release_date: m.Year
-            }));
-          setRelatedMovies(transformedRelated);
+        try {
+          const relatedRes = await fetch(`https://www.omdbapi.com/?s=${encodeURIComponent(firstGenre)}&apikey=${OMDB_API_KEY}&type=movie`);
+          const relatedData = await relatedRes.json();
+          if (relatedData.Response === "True") {
+            const transformedRelated = relatedData.Search
+              .filter(m => m.imdbID !== data.imdbID)
+              .slice(0, 5)
+              .map(m => ({
+                id: m.imdbID,
+                title: m.Title,
+                poster_path: m.Poster !== "N/A" ? m.Poster : "https://via.placeholder.com/300x450?text=No+Poster",
+                release_date: m.Year
+              }));
+            setRelatedMovies(transformedRelated);
+          }
+        } catch (e) {
+          console.warn("Related movies fetch failed", e);
         }
 
       } else {
-        console.warn("OMDb Error:", data.Error);
         setNotFound(true);
       }
     } catch (err) {
@@ -85,7 +127,24 @@ const MovieDetail = () => {
 
   useEffect(() => {
     getShow();
-  }, [id]);
+  }, [id, selectedDate, user]);
+
+  const handleToggleFavorite = async () => {
+    if (!user) {
+      toast.error("Please login to add to favorites");
+      return;
+    }
+    if (!show?.movie) return;
+
+    try {
+      const newStatus = await toggleFavorite(user.id, show.movie);
+      setIsFavorite(newStatus);
+      toast.success(newStatus ? "Added to Favorites" : "Removed from Favorites");
+    } catch (err) {
+      console.error(err);
+      toast.error(`Error: ${err.message || "Failed to update favorite"}`);
+    }
+  };
 
   if (notFound) {
     return (
@@ -170,18 +229,38 @@ const MovieDetail = () => {
 
             {/* Action Buttons */}
             <div className="flex flex-wrap items-center gap-5 mt-8">
-              <a
-                href="#dateSelect"
+              <button
+                onClick={() => {
+                  const today = new Date().toISOString().split('T')[0];
+                  // Dynamic Price Calculation
+                  const baseRating = Number(movie.vote_average) || 7;
+                  const isNew = new Date(movie.release_date).getFullYear() > 2022;
+                  const standardPrice = Math.floor((baseRating * 30) + (isNew ? 100 : 50));
+                  const vipPrice = standardPrice + 150;
+
+                  navigate(`/movies/${movie.id}/${today}`, {
+                    state: {
+                      movie: {
+                        ...movie,
+                        prices: { standard: standardPrice, vip: vipPrice }
+                      }
+                    }
+                  });
+                }}
                 className="group relative px-10 py-4 bg-white text-black font-bold rounded-full overflow-hidden transition-all hover:scale-105 active:scale-95 shadow-[0_0_40px_rgba(255,255,255,0.3)]"
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-gray-200 to-white opacity-0 group-hover:opacity-100 transition-opacity"></div>
                 <span className="relative flex items-center gap-3">
                   <Ticket className="w-5 h-5 fill-current" /> Buy Tickets
                 </span>
-              </a>
+              </button>
 
               <button
                 type="button"
+                onClick={() => {
+                  toast.success("Opening trailer on YouTube...");
+                  window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(movie.title + " trailer")}`, "_blank");
+                }}
                 className="px-10 py-4 bg-white/10 hover:bg-white/20 backdrop-blur-xl border border-white/10 rounded-full text-white font-semibold transition-all hover:border-white/30 flex items-center gap-3"
               >
                 <PlayCircleIcon className="w-5 h-5" />
@@ -189,9 +268,10 @@ const MovieDetail = () => {
               </button>
 
               <button
-                className="p-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-full transition-all group hover:border-pink-500/50"
+                onClick={handleToggleFavorite}
+                className={`p-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-full transition-all group hover:border-pink-500/50 ${isFavorite ? 'border-pink-500' : ''}`}
               >
-                <Heart className="w-6 h-6 text-gray-400 group-hover:text-pink-500 group-hover:fill-current transition-colors" />
+                <Heart className={`w-6 h-6 transition-colors ${isFavorite ? 'text-pink-500 fill-current' : 'text-gray-400 group-hover:text-pink-500'}`} />
               </button>
             </div>
           </div>
@@ -231,6 +311,98 @@ const MovieDetail = () => {
             </div>
           </section>
 
+          {/* SECTION: Date Selector (New) */}
+          <section id="dateSelect" className="scroll-mt-32">
+            <div className="flex items-center gap-4 mb-8">
+              <div className="w-1.5 h-10 bg-gradient-to-b from-pink-500 to-red-500 rounded-full shadow-[0_0_15px_rgba(239,68,68,0.5)]"></div>
+              <h3 className="text-3xl font-bold text-white tracking-tight">Choose Date</h3>
+            </div>
+
+            <div className="relative p-8 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-xl flex flex-col md:flex-row items-center justify-between gap-8 shadow-2xl overflow-hidden group">
+              {/* Decorative Glow */}
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1/2 h-full bg-pink-500/5 blur-[80px] pointer-events-none" />
+
+              {/* Date Carousel */}
+              <div className="flex items-center gap-4 w-full md:w-auto">
+                <button className="p-3 rounded-full bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-colors">
+                  <ChevronLeft className="w-6 h-6" />
+                </button>
+
+                <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide mask-linear-fade">
+                  {dates.map((d, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setSelectedDate(i)}
+                      className={`relative flex flex-col items-center justify-center min-w-[4.5rem] h-20 rounded-2xl border transition-all duration-300 group/date
+                            ${selectedDate === i
+                          ? "bg-gradient-to-br from-pink-600 to-purple-700 border-transparent shadow-[0_0_20px_rgba(236,72,153,0.4)] scale-105"
+                          : "bg-white/5 border-white/10 hover:border-pink-500/50 hover:bg-white/10"
+                        }`}
+                    >
+                      <span className={`text-xs font-bold uppercase tracking-wider mb-1 ${selectedDate === i ? "text-white" : "text-gray-400 group-hover/date:text-gray-200"}`}>
+                        {d.day}
+                      </span>
+                      <span className={`text-xl font-black ${selectedDate === i ? "text-white" : "text-white"}`}>
+                        {d.date}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+
+                <button className="p-3 rounded-full bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-colors">
+                  <ChevronRight className="w-6 h-6" />
+                </button>
+              </div>
+
+              {/* Showtimes List */}
+              <div className="w-full mt-6 space-y-4">
+                {show?.showtimes && show.showtimes.length > 0 ? (
+                  // Group by Theater
+                  Object.values(show.showtimes.reduce((acc, curr) => {
+                    if (!acc[curr.theaters.id]) acc[curr.theaters.id] = { theater: curr.theaters, times: [] };
+                    acc[curr.theaters.id].times.push(curr);
+                    return acc;
+                  }, {})).map((group, idx) => (
+                    <div key={idx} className="bg-black/20 rounded-xl p-4">
+                      <h4 className="text-white font-bold mb-3 flex justify-between">
+                        {group.theater.name}
+                        <span className="text-xs text-gray-400 font-normal">{group.theater.location}</span>
+                      </h4>
+                      <div className="flex flex-wrap gap-3">
+                        {group.times.map((t) => {
+                          const dateObj = new Date(t.show_time);
+                          const timeStr = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+                          return (
+                            <button
+                              key={t.id}
+                              onClick={() => {
+                                navigate(`/movies/${movie.id}/${dates[selectedDate].fullDate}`, {
+                                  state: {
+                                    movie: { ...movie },
+                                    showtime: t,
+                                    date: dates[selectedDate].fullDate
+                                  }
+                                });
+                              }}
+                              className="px-4 py-2 bg-white/5 hover:bg-pink-600 border border-white/10 hover:border-pink-500 rounded-lg text-sm text-gray-300 hover:text-white transition-all shadow-sm hover:shadow-[0_0_15px_rgba(236,72,153,0.4)]"
+                            >
+                              {timeStr}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-4 text-gray-400">
+                    {isLoadingInfo ? "Loading showtimes..." : "No showtimes available for this date."}
+                  </div>
+                )}
+              </div>
+            </div>
+          </section>
+
           {/* SECTION: Top Cast */}
           <section>
             <div className="flex items-center gap-4 mb-10">
@@ -249,12 +421,10 @@ const MovieDetail = () => {
                 {displayData.Actors && displayData.Actors !== "N/A" ? (
                   displayData.Actors.split(', ').map((actor, idx) => (
                     <div key={idx} className="group relative bg-white/5 hover:bg-white/10 border border-white/5 hover:border-white/20 p-6 rounded-2xl flex flex-col items-center gap-4 transition-all duration-300 hover:-translate-y-1 cursor-pointer">
-                      <div className="relative w-24 h-24 rounded-full p-1 border-2 border-white/10 group-hover:border-pink-500 transition-colors shadow-xl">
-                        <img
-                          src={`https://ui-avatars.com/api/?name=${actor}&background=random&color=fff&size=200&font-size=0.35`}
-                          alt={actor}
-                          className="w-full h-full rounded-full object-cover"
-                        />
+                      {/* CastAvatar Removed as dependency needed, using simple placeholder or text */}
+                      <div className="relative w-24 h-24 rounded-full p-1 border-2 border-white/10 group-hover:border-pink-500 transition-colors shadow-xl overflow-hidden bg-gray-700">
+                        {/* Placeholder for CastAvatar since component path is unsure/removed in previous steps? No, it should be there. Restoring simple img tag if avatar logic is complex */}
+                        <img src={`https://ui-avatars.com/api/?name=${actor}&background=random`} alt={actor} className="w-full h-full object-cover rounded-full" />
                       </div>
                       <div className="text-center">
                         <p className="font-bold text-white text-base group-hover:text-pink-200 transition-colors">{actor}</p>
@@ -368,7 +538,6 @@ const MovieDetail = () => {
           </div>
 
         </div>
-
       </div>
 
     </div>

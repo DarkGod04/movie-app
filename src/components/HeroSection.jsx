@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { dummyShowsData } from "../assets/assets";
-import { ArrowRight, CalendarIcon, ClockIcon } from "lucide-react";
+import { ArrowRight, CalendarIcon, ClockIcon, Ticket } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const movies = [
@@ -89,12 +89,15 @@ const HeroSection = () => {
         {/* Action Buttons */}
         <div className="flex flex-wrap items-center gap-6">
           <button
-            onClick={() => navigate('/movies')}
+            onClick={() => {
+              const today = new Date().toISOString().split('T')[0];
+              navigate(`/movies/${movie.id}/${today}`);
+            }}
             className="group relative px-8 py-4 bg-white text-black font-bold rounded-full overflow-hidden transition-transform hover:scale-105 active:scale-95 shadow-[0_0_20px_rgba(255,255,255,0.3)]"
           >
             <div className="absolute inset-0 bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 opacity-0 group-hover:opacity-20 transition-opacity"></div>
             <span className="relative flex items-center gap-2">
-              Explore Now <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              <Ticket className="w-5 h-5 fill-current" /> Book Now
             </span>
           </button>
           <button className="px-8 py-4 bg-white/10 border border-white/10 rounded-full text-white font-semibold backdrop-blur-md hover:bg-white/20 transition-all hover:border-white/30">

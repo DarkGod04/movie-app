@@ -1,15 +1,27 @@
 import React, { useState, useEffect } from 'react';
 
+// Simple in-memory cache to prevent duplicate requests
+const imageCache = {};
+
 const CastAvatar = ({ name, className }) => {
     const [imageUrl, setImageUrl] = useState(null);
 
     useEffect(() => {
+        if (!name) return;
+
+        // Check cache first
+        if (imageCache[name]) {
+            setImageUrl(imageCache[name]);
+            return;
+        }
+
         let isMounted = true;
 
         const fetchImage = async () => {
             try {
-                // Use Wikipedia API to find an image for the actor
-                const url = `https://en.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(name)}&prop=pageimages&format=json&pithumbsize=150&origin=*`;
+                // Use generator=search to find the most likely page, handling disambiguation better
+                const url = `https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(name)}&gsrlimit=1&prop=pageimages&pithumbsize=200&format=json&origin=*`;
+
                 const res = await fetch(url);
                 const data = await res.json();
 
@@ -19,21 +31,24 @@ const CastAvatar = ({ name, className }) => {
                     const page = pages[firstPageId];
 
                     if (page.thumbnail && page.thumbnail.source) {
-                        if (isMounted) setImageUrl(page.thumbnail.source);
+                        if (isMounted) {
+                            setImageUrl(page.thumbnail.source);
+                            imageCache[name] = page.thumbnail.source; // Cache it
+                        }
                     }
                 }
             } catch (error) {
-                // Silent fail, keep default state
+                // Silent fail
             }
         };
 
-        if (name) fetchImage();
+        fetchImage();
 
         return () => { isMounted = false; };
     }, [name]);
 
     // Fallback to UI Avatars if no Wikipedia image found
-    const src = imageUrl || `https://ui-avatars.com/api/?name=${name}&background=random&color=fff&size=64&font-size=0.4`;
+    const src = imageUrl || `https://ui-avatars.com/api/?name=${name}&background=random&color=fff&size=200&font-size=0.35`;
 
     return (
         <img
@@ -41,8 +56,8 @@ const CastAvatar = ({ name, className }) => {
             alt={name}
             className={className}
             onError={(e) => {
-                // If Wikipedia image fails (403/404), revert to avatar
-                e.target.src = `https://ui-avatars.com/api/?name=${name}&background=random&color=fff&size=64&font-size=0.4`;
+                // If Wikipedia image fails loading, revert to avatar
+                e.target.src = `https://ui-avatars.com/api/?name=${name}&background=random&color=fff&size=200&font-size=0.35`;
             }}
         />
     );

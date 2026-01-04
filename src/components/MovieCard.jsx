@@ -1,11 +1,33 @@
-import { StarIcon } from 'lucide-react'
-import React from 'react'
+import { StarIcon, Heart } from 'lucide-react'
+import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import timeFormat from '../assets/lib/timeFormat'
 import CastAvatar from './CastAvatar'
 
 const MovieCard = ({ movie }) => {
   const navigate = useNavigate()
+  const [isFavorite, setIsFavorite] = useState(false)
+
+  useEffect(() => {
+    const favorites = JSON.parse(localStorage.getItem('my_favorites')) || []
+    const isFav = favorites.some((fav) => fav._id === movie._id || fav.imdbID === movie._id)
+    setIsFavorite(isFav)
+  }, [movie._id])
+
+  const toggleFavorite = (e) => {
+    e.stopPropagation()
+    const favorites = JSON.parse(localStorage.getItem('my_favorites')) || []
+
+    if (isFavorite) {
+      const newFavorites = favorites.filter((fav) => fav._id !== movie._id && fav.imdbID !== movie._id)
+      localStorage.setItem('my_favorites', JSON.stringify(newFavorites))
+      setIsFavorite(false)
+    } else {
+      favorites.push(movie)
+      localStorage.setItem('my_favorites', JSON.stringify(favorites))
+      setIsFavorite(true)
+    }
+  }
 
   return (
     <div
@@ -23,6 +45,16 @@ const MovieCard = ({ movie }) => {
 
         {/* Gradient Overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
+
+        {/* Favorite Button */}
+        <button
+          onClick={toggleFavorite}
+          className="absolute top-2 left-2 p-2 rounded-full bg-black/40 hover:bg-black/60 backdrop-blur-sm transition-all z-10"
+        >
+          <Heart
+            className={`w-5 h-5 transition-colors duration-300 ${isFavorite ? 'text-pink-500 fill-pink-500' : 'text-white'}`}
+          />
+        </button>
 
         {/* Rating badge */}
         <div className="absolute top-2 right-2 flex items-center gap-1 bg-black/70 px-2 py-1 rounded-full text-xs text-gray-100">
@@ -72,7 +104,8 @@ const MovieCard = ({ movie }) => {
         <button
           onClick={(e) => {
             e.stopPropagation(); // prevent parent onClick
-            navigate(`/movies/${movie._id}`);
+            const today = new Date().toISOString().split('T')[0];
+            navigate(`/movies/${movie._id || movie.id}/${today}`);
             window.scrollTo(0, 0)
           }}
           className="mt-4 px-4 py-2 text-sm bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 transition rounded-full font-medium text-white shadow-md hover:shadow-lg"
