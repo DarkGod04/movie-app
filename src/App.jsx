@@ -4,14 +4,14 @@ import { Route, Routes, useLocation } from 'react-router-dom'
 import SEO from './components/SEO'
 
 const Home = React.lazy(() => import('./pages/home'));
-const Movies = React.lazy(() => import('./pages/movies'));
-const MovieDetail = React.lazy(() => import('./pages/moviedetail'));
+const Movies = React.lazy(() => import('./pages/Movies'));
+const MovieDetail = React.lazy(() => import('./pages/MovieDetail'));
 const SeatLayout = React.lazy(() => import('./pages/seatlayout'));
 const MyBookings = React.lazy(() => import('./pages/mybookings'));
-const Favorite = React.lazy(() => import('./pages/favorite'));
+const Favorite = React.lazy(() => import('./pages/Favorite'));
 const Login = React.lazy(() => import('./pages/Login'));
 const Signup = React.lazy(() => import('./pages/Signup'));
-const Footer = React.lazy(() => import('./components/footer'));
+const Footer = React.lazy(() => import('./components/Footer'));
 const ProtectedRoute = React.lazy(() => import('./components/ProtectedRoute'));
 const TheaterList = React.lazy(() => import('./pages/TheaterList'));
 const Releases = React.lazy(() => import('./pages/Releases'));
