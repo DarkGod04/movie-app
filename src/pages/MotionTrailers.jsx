@@ -107,7 +107,7 @@ const VideoCard = ({ trailer, isActive, isMuted, toggleMute }) => {
                         <motion.button
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
-                            onClick={() => navigate('/movies')}
+                            onClick={() => navigate(`/movies/${trailer.id}`)}
                             className="relative overflow-hidden flex-1 max-w-[220px] h-14 bg-white text-black rounded-2xl font-black flex items-center justify-center gap-3 shadow-[0_0_30px_rgba(255,255,255,0.2)] hover:shadow-[0_0_40px_rgba(236,72,153,0.5)] transition-all text-sm uppercase tracking-wider group"
                         >
                             <div className="absolute inset-0 shimmer-btn opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -115,6 +115,16 @@ const VideoCard = ({ trailer, isActive, isMuted, toggleMute }) => {
                                 <Ticket className="w-5 h-5 group-hover:text-pink-600 transition-colors group-hover:rotate-12 transform duration-300" />
                                 Get Tickets
                             </span>
+                        </motion.button>
+
+                        <motion.button
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => navigate(`/movies/${trailer.id}`)}
+                            className="w-14 h-14 flex items-center justify-center bg-white/5 border border-white/10 rounded-full backdrop-blur-xl hover:bg-white/10 transition-colors shadow-lg group mr-4"
+                            title="More Info"
+                        >
+                            <Info className="w-6 h-6 text-white" />
                         </motion.button>
 
                         <motion.button

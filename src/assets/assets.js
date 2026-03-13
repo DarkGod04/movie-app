@@ -18,65 +18,83 @@ export const assets = {
 
 export const dummyTrailers = [
   {
-    image: "https://img.youtube.com/vi/WpW36ldAqnM/maxresdefault.jpg",
-    videoUrl: 'https://youtu.be/WpW36ldAqnM'
+    id: "tt22409552", // Fighter
+    title: "Fighter",
+    image: "https://img.youtube.com/vi/l_D0m-lFm8g/maxresdefault.jpg",
+    videoUrl: 'https://www.youtube.com/watch?v=l_D0m-lFm8g'
   },
   {
-    image: "https://img.youtube.com/vi/-sAOWhvheK8/maxresdefault.jpg",
-    videoUrl: 'https://www.youtube.com/watch?v=-sAOWhvheK8'
+    id: "tt26655182", // Shaitaan
+    title: "Shaitaan",
+    image: "https://img.youtube.com/vi/RunhS9vN9o4/maxresdefault.jpg",
+    videoUrl: 'https://www.youtube.com/watch?v=RunhS9vN9o4'
   },
   {
+    id: "tt14992822", // Crew
+    title: "Crew",
     image: "https://img.youtube.com/vi/1pHDWnXmK7Y/maxresdefault.jpg",
     videoUrl: 'https://www.youtube.com/watch?v=1pHDWnXmK7Y'
   },
   {
+    id: "tt15729350", // Teri Baaton Mein...
+    title: "Teri Baaton Mein Aisa Uljha Jiya",
     image: "https://img.youtube.com/vi/umiKiW4En9g/maxresdefault.jpg",
     videoUrl: 'https://www.youtube.com/watch?v=umiKiW4En9g'
   },
   {
+    id: "tt15239678", // Dune 2
+    title: "Dune: Part Two",
+    image: "https://img.youtube.com/vi/U2Qp5pL3ovA/maxresdefault.jpg",
+    videoUrl: 'https://www.youtube.com/watch?v=U2Qp5pL3ovA', // working URL
+  },
+  {
+    id: "tt11315808", // Civil War
+    title: "Civil War",
     image: "https://img.youtube.com/vi/aWzlQ2N6qqg/maxresdefault.jpg",
-    videoUrl: 'https://www.youtube.com/watch?v=aWzlQ2N6qqg'
+    videoUrl: 'https://www.youtube.com/watch?v=aWzlQ2N6qqg' // Assume still works
   },
   {
-    image: "https://img.youtube.com/vi/d9MyqF3pKWI/maxresdefault.jpg",
-    videoUrl: 'https://www.youtube.com/watch?v=d9MyqF3pKWI', // Avatar: The Way of Water
+    id: "tt1684562", // The Fall Guy
+    title: "The Fall Guy",
+    image: "https://img.youtube.com/vi/j7jPnwVGdZ8/maxresdefault.jpg", // replaced 
+    videoUrl: 'https://www.youtube.com/watch?v=j7jPnwVGdZ8', // Placeholder URL fix 
   },
   {
-    image: "https://img.youtube.com/vi/uYPbbksJxIg/maxresdefault.jpg",
-    videoUrl: 'https://www.youtube.com/watch?v=uYPbbksJxIg', // Oppenheimer
+    id: "tt14539740", // Godzilla x Kong
+    title: "Godzilla x Kong: The New Empire",
+    image: "https://img.youtube.com/vi/lV1OOlGwExM/maxresdefault.jpg",
+    videoUrl: 'https://www.youtube.com/watch?v=lV1OOlGwExM',
   },
   {
+    id: "tt1160419", // Kingdom of the Planet of the Apes
+    title: "Kingdom of the Planet of the Apes",
+    image: "https://img.youtube.com/vi/XtFI7SNtVpY/maxresdefault.jpg",
+    videoUrl: 'https://www.youtube.com/watch?v=XtFI7SNtVpY',
+  },
+  {
+    id: "tt12037194", // Furiosa
+    title: "Furiosa: A Mad Max Saga",
+    image: "https://img.youtube.com/vi/XJMuhwVlca4/maxresdefault.jpg",
+    videoUrl: 'https://www.youtube.com/watch?v=XJMuhwVlca4',
+  },
+  {
+    id: "tt15398776", // Oppenheimer
+    title: "Oppenheimer",
+    image: "https://img.youtube.com/vi/bK6ldnjE3Y0/maxresdefault.jpg", // Updated
+    videoUrl: 'https://www.youtube.com/watch?v=bK6ldnjE3Y0',
+  },
+  {
+    id: "tt1517268", // Barbie
+    title: "Barbie",
     image: "https://img.youtube.com/vi/pBk4NYhUOQM/maxresdefault.jpg",
-    videoUrl: 'https://www.youtube.com/watch?v=pBk4NYhUOQM', // Barbie
+    videoUrl: 'https://www.youtube.com/watch?v=pBk4NYhUOQM',
   },
   {
-    image: "https://img.youtube.com/vi/Way9Dexny3w/maxresdefault.jpg",
-    videoUrl: 'https://www.youtube.com/watch?v=Way9Dexny3w', // Dune: Part Two
-  },
-  {
-    image: "https://img.youtube.com/vi/xy8aJw1vYHg/maxresdefault.jpg",
-    videoUrl: 'https://www.youtube.com/watch?v=xy8aJw1vYHg', // Joker: Folie à Deux
-  },
-  {
-    image: "https://img.youtube.com/vi/2m1drlOZSDw/maxresdefault.jpg",
-    videoUrl: 'https://www.youtube.com/watch?v=2m1drlOZSDw', // Mission: Impossible - Dead Reckoning Part One
-  },
-  {
-    image: "https://img.youtube.com/vi/mqqft2x_Aa4/maxresdefault.jpg",
-    videoUrl: 'https://www.youtube.com/watch?v=mqqft2x_Aa4', // The Batman
-  },
-  {
-    image: "https://img.youtube.com/vi/giXco2jaZ_4/maxresdefault.jpg",
-    videoUrl: 'https://www.youtube.com/watch?v=giXco2jaZ_4', // Top Gun: Maverick
-  },
-  {
+    id: "tt6263850", // Deadpool & Wolverine
+    title: "Deadpool & Wolverine",
     image: "https://img.youtube.com/vi/73_1biulkYk/maxresdefault.jpg",
-    videoUrl: 'https://www.youtube.com/watch?v=73_1biulkYk', // Deadpool & Wolverine
-  },
-  {
-    image: "https://img.youtube.com/vi/4Rgx4VIfrwY/maxresdefault.jpg",
-    videoUrl: 'https://www.youtube.com/watch?v=4Rgx4VIfrwY', // Gladiator II
-  },
+    videoUrl: 'https://www.youtube.com/watch?v=73_1biulkYk',
+  }
 ]
 
 const dummyCastsData = [

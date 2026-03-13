@@ -1,8 +1,45 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { assets } from '../assets/assets';
 import { Facebook, Twitter, Instagram, Mail, ArrowRight } from 'lucide-react';
+import { supabase } from '../lib/supabaseClient';
+import toast from 'react-hot-toast';
 
 const Footer = () => {
+    const [email, setEmail] = React.useState('');
+    const [loading, setLoading] = React.useState(false);
+
+    const handleSubscribe = async (e) => {
+        e.preventDefault();
+        setLoading(true);
+
+        try {
+            // Check for duplicate
+            const { data: existing } = await supabase
+                .from('subscribers')
+                .select('id')
+                .eq('email', email)
+                .single();
+
+            if (existing) {
+                toast.error("You're already subscribed!");
+                setLoading(false);
+                return;
+            }
+
+            const { error } = await supabase.from('subscribers').insert([{ email }]);
+            if (error) throw error;
+
+            toast.success("Thanks for subscribing!");
+            setEmail('');
+        } catch (error) {
+            console.error(error);
+            toast.error("Failed to subscribe.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
     return (
         <footer className="relative bg-black pt-20 pb-10 border-t border-white/5 overflow-hidden">
             {/* Ambient Glow */}
@@ -29,19 +66,19 @@ const Footer = () => {
                         <div>
                             <h3 className="text-white font-bold mb-6">Company</h3>
                             <ul className="space-y-4 text-sm text-gray-400">
-                                <li><FooterLink text="Home" /></li>
-                                <li><FooterLink text="About Us" /></li>
-                                <li><FooterLink text="Contact" /></li>
-                                <li><FooterLink text="Careers" /></li>
+                                <li><FooterLink text="Home" to="/" /></li>
+                                <li><FooterLink text="About Us" to="/about" /></li>
+                                <li><FooterLink text="Contact" to="/contact" /></li>
+                                <li><FooterLink text="Careers" to="/careers" /></li>
                             </ul>
                         </div>
                         <div>
                             <h3 className="text-white font-bold mb-6">Support</h3>
                             <ul className="space-y-4 text-sm text-gray-400">
-                                <li><FooterLink text="Help Center" /></li>
-                                <li><FooterLink text="Terms of Service" /></li>
-                                <li><FooterLink text="Privacy Policy" /></li>
-                                <li><FooterLink text="FAQ" /></li>
+                                <li><FooterLink text="Help Center" to="/help" /></li>
+                                <li><FooterLink text="Terms of Service" to="/terms" /></li>
+                                <li><FooterLink text="Privacy Policy" to="/privacy" /></li>
+                                <li><FooterLink text="FAQ" to="/faq" /></li>
                             </ul>
                         </div>
 
@@ -49,16 +86,19 @@ const Footer = () => {
                         <div className="col-span-2 md:col-span-1">
                             <h3 className="text-white font-bold mb-6">Stay Updated</h3>
                             <p className="text-sm text-gray-400 mb-4">Subscribe to our newsletter for the latest releases.</p>
-                            <div className="flex items-center bg-white/5 border border-white/10 rounded-full p-1 pl-4 focus-within:border-pink-500/50 transition-colors">
+                            <form onSubmit={handleSubscribe} className="flex items-center bg-white/5 border border-white/10 rounded-full p-1 pl-4 focus-within:border-pink-500/50 transition-colors">
                                 <input
                                     type="email"
+                                    required
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
                                     placeholder="Email address"
                                     className="bg-transparent border-none outline-none text-white text-sm w-full placeholder-gray-600"
                                 />
-                                <button className="p-2 bg-gradient-to-r from-pink-600 to-purple-600 rounded-full hover:shadow-[0_0_15px_rgba(236,72,153,0.4)] transition-all">
+                                <button type="submit" disabled={loading} className="p-2 bg-gradient-to-r from-pink-600 to-purple-600 rounded-full hover:shadow-[0_0_15px_rgba(236,72,153,0.4)] transition-all disabled:opacity-50">
                                     <ArrowRight size={16} className="text-white" />
                                 </button>
-                            </div>
+                            </form>
                         </div>
                     </div>
                 </div>
@@ -67,8 +107,8 @@ const Footer = () => {
                 <div className="pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-gray-500">
                     <p>© {new Date().getFullYear()} QuickShow Inc. All rights reserved.</p>
                     <div className="flex items-center gap-8">
-                        <span className="hover:text-white cursor-pointer transition-colors">Privacy</span>
-                        <span className="hover:text-white cursor-pointer transition-colors">Terms</span>
+                        <Link to="/privacy" className="hover:text-white cursor-pointer transition-colors">Privacy</Link>
+                        <Link to="/terms" className="hover:text-white cursor-pointer transition-colors">Terms</Link>
                         <span className="hover:text-white cursor-pointer transition-colors">Cookies</span>
                     </div>
                 </div>
@@ -83,10 +123,10 @@ const SocialIcon = ({ icon }) => (
     </div>
 );
 
-const FooterLink = ({ text }) => (
-    <a href="#" className="hover:text-pink-500 transition-colors inline-block hover:translate-x-1 duration-300">
+const FooterLink = ({ text, to }) => (
+    <Link to={to} className="hover:text-pink-500 transition-colors inline-block hover:translate-x-1 duration-300">
         {text}
-    </a>
+    </Link>
 )
 
 export default Footer;

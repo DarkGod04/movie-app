@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import BlurCircle from '../components/BlurCircle';
 import { LayoutDashboard, Film, Calendar, Users, Plus, DollarSign, TrendingUp, Search, Trash2, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -7,6 +7,10 @@ import { supabase } from '../lib/supabaseClient';
 import AddMovieForm from '../components/admin/AddMovieForm';
 import ShowtimeManager from '../components/admin/ShowtimeManager';
 import toast from 'react-hot-toast';
+import BookingsManager from '../components/admin/BookingsManager';
+import UsersManager from '../components/admin/UsersManager';
+import MessagesManager from '../components/admin/MessagesManager';
+import SEO from '../components/SEO';
 
 const AdminDashboard = () => {
     const navigate = useNavigate();
@@ -73,21 +77,20 @@ const AdminDashboard = () => {
 
     return (
         <div className="min-h-screen bg-black text-white relative overflow-hidden font-['Outfit']">
+            <SEO title="Admin Dashboard" description="Manage movies, showtimes, and users." />
             <BlurCircle top="-10%" left="-10%" />
             <BlurCircle bottom="-10%" right="-10%" />
 
             {/* Modals */}
-            <AnimatePresence>
-                {showAddMovie && (
-                    <AddMovieForm
-                        onClose={() => setShowAddMovie(false)}
-                        onMovieAdded={(newMovie) => {
-                            setMovies([newMovie, ...movies]);
-                            setStats(prev => ({ ...prev, movies: prev.movies + 1 }));
-                        }}
-                    />
-                )}
-            </AnimatePresence>
+            {showAddMovie && (
+                <AddMovieForm
+                    onClose={() => setShowAddMovie(false)}
+                    onMovieAdded={(newMovie) => {
+                        setMovies([newMovie, ...movies]);
+                        setStats(prev => ({ ...prev, movies: prev.movies + 1 }));
+                    }}
+                />
+            )}
 
             <div className="flex h-screen pt-20 relative z-10">
                 {/* Sidebar */}
@@ -104,7 +107,9 @@ const AdminDashboard = () => {
                             { id: 'overview', label: 'Overview', icon: LayoutDashboard },
                             { id: 'movies', label: 'Movies', icon: Film },
                             { id: 'showtimes', label: 'Showtimes', icon: Calendar },
+                            { id: 'bookings', label: 'Bookings', icon: Search },
                             { id: 'users', label: 'Users', icon: Users },
+                            { id: 'messages', label: 'Messages', icon: Search },
                         ].map((item) => (
                             <button
                                 key={item.id}
@@ -120,11 +125,21 @@ const AdminDashboard = () => {
                         ))}
                     </nav>
 
-                    <div className="mt-auto pt-6 border-t border-white/10">
-                        <button className="flex items-center gap-3 text-gray-400 hover:text-white transition-colors px-4 py-2 w-full text-sm">
-                            <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                            System Operational
+                    <div className="mt-auto pt-6 border-t border-white/10 space-y-2">
+                        <button
+                            onClick={() => navigate('/')}
+                            className="flex items-center gap-3 text-gray-400 hover:text-white hover:bg-white/5 transition-all px-4 py-3 w-full text-sm rounded-xl font-medium"
+                        >
+                            <div className="w-5 h-5 flex items-center justify-center">
+                                ←
+                            </div>
+                            Back to Home
                         </button>
+
+                        <div className="flex items-center gap-3 text-gray-500 px-4 py-2 w-full text-xs font-mono">
+                            <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                            System Operational
+                        </div>
                     </div>
                 </aside>
 
@@ -225,6 +240,15 @@ const AdminDashboard = () => {
 
                         {/* SHOWTIMES MANAGER */}
                         {activeTab === 'showtimes' && <ShowtimeManager />}
+
+                        {/* BOOKINGS MANAGER */}
+                        {activeTab === 'bookings' && <BookingsManager />}
+
+                        {/* USERS MANAGER */}
+                        {activeTab === 'users' && <UsersManager />}
+
+                        {/* MESSAGES MANAGER */}
+                        {activeTab === 'messages' && <MessagesManager />}
 
                     </div>
                 </main>

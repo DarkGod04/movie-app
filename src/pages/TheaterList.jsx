@@ -21,7 +21,6 @@ const TheaterList = () => {
 
             // 2. If empty, auto-seed
             if (!data || data.length === 0) {
-                console.log("No theaters found, attempting to seed...");
                 setSeeding(true);
                 try {
                     await seedTheaters();

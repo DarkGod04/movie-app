@@ -27,7 +27,8 @@ const ShowtimeManager = () => {
     const fetchData = async () => {
         setLoading(true);
         try {
-            const [{ data: st }, { data: m }, { data: t }] = await Promise.all([
+            console.log("Fetching showtime data...");
+            const [{ data: st, error: stError }, { data: m, error: mError }, { data: t, error: tError }] = await Promise.all([
                 supabase.from('showtimes')
                     .select('*, movies(title, poster_path), theaters(name)')
                     .gte('show_time', new Date().toISOString())
@@ -35,6 +36,13 @@ const ShowtimeManager = () => {
                 supabase.from('movies').select('id, title'),
                 supabase.from('theaters').select('id, name')
             ]);
+
+            if (stError) console.error("Showtimes Error:", stError);
+            if (mError) console.error("Movies Error:", mError);
+            if (tError) console.error("Theaters Error:", tError);
+
+            console.log("Movies fetched:", m);
+            console.log("Theaters fetched:", t);
 
             if (st) setShowtimes(st);
             if (m) setMovies(m);
@@ -49,6 +57,12 @@ const ShowtimeManager = () => {
 
     const handleAddShowtime = async (e) => {
         e.preventDefault();
+
+        if (!formData.movie_id || !formData.theater_id) {
+            toast.error("Please select both a movie and a theater");
+            return;
+        }
+
         try {
             const show_time = new Date(`${formData.date}T${formData.time}`).toISOString();
 
@@ -61,25 +75,35 @@ const ShowtimeManager = () => {
                 price_vip: parseInt(formData.price_vip)
             });
 
-            if (error) throw error;
+            if (error) {
+                console.error("Supabase Insert Error:", error);
+                throw error;
+            }
             toast.success("Showtime scheduled!");
             setIsAdding(false);
             fetchData();
         } catch (error) {
-            console.error("Error adding showtime:", error);
-            toast.error("Failed to schedule showtime");
+            console.error("Error adding showtime (Full):", error);
+            toast.error(`Failed: ${error.message || "Unknown error"}`);
         }
     };
 
     const handleDelete = async (id) => {
-        if (!window.confirm("Cancel this showtime?")) return;
+        if (!window.confirm("Are you sure you want to delete this showtime?")) return;
+
         try {
             const { error } = await supabase.from('showtimes').delete().eq('id', id);
-            if (error) throw error;
-            toast.success("Showtime cancelled");
+
+            if (error) {
+                console.error("Delete Error:", error);
+                throw error;
+            }
+
+            toast.success("Showtime deleted successfully");
             fetchData();
         } catch (error) {
-            toast.error("Failed to cancel");
+            console.error("Failed to delete:", error);
+            toast.error(`Failed to delete: ${error.message}`);
         }
     };
 
@@ -107,25 +131,25 @@ const ShowtimeManager = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label className="text-xs text-gray-400 font-bold ml-1 mb-1 block">Movie</label>
-                            <select
-                                required
-                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-purple-500"
-                                onChange={e => setFormData({ ...formData, movie_id: e.target.value })}
-                            >
-                                <option value="">Select Movie</option>
-                                {movies.map(m => <option key={m.id} value={m.id}>{m.title}</option>)}
-                            </select>
+                            <CustomDropdown
+                                options={movies}
+                                value={formData.movie_id}
+                                onChange={(val) => setFormData({ ...formData, movie_id: val })}
+                                placeholder="Select Movie"
+                                labelKey="title"
+                                valueKey="id"
+                            />
                         </div>
                         <div>
                             <label className="text-xs text-gray-400 font-bold ml-1 mb-1 block">Theater</label>
-                            <select
-                                required
-                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-purple-500"
-                                onChange={e => setFormData({ ...formData, theater_id: e.target.value })}
-                            >
-                                <option value="">Select Theater</option>
-                                {theaters.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-                            </select>
+                            <CustomDropdown
+                                options={theaters}
+                                value={formData.theater_id}
+                                onChange={(val) => setFormData({ ...formData, theater_id: val })}
+                                placeholder="Select Theater"
+                                labelKey="name"
+                                valueKey="id"
+                            />
                         </div>
                     </div>
 
@@ -160,18 +184,45 @@ const ShowtimeManager = () => {
 
             <div className="grid gap-4">
                 {showtimes.length === 0 ? (
-                    <div className="text-center py-10 text-gray-500">No upcoming showtimes found.</div>
+                    <div className="flex flex-col items-center justify-center py-20 bg-white/5 border border-white/5 border-dashed rounded-3xl group hover:bg-white/10 transition-colors">
+                        <div className="w-20 h-20 bg-black/40 rounded-full flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 border border-white/10">
+                            <Calendar className="w-8 h-8 text-gray-400 group-hover:text-purple-400 transition-colors" />
+                        </div>
+                        <h3 className="text-2xl font-bold text-white mb-2">No Upcoming Showtimes</h3>
+                        <p className="text-gray-400 max-w-sm text-center mb-8">
+                            Your schedule is currently empty. Start adding showtimes to sell tickets.
+                        </p>
+                        <button
+                            onClick={() => setIsAdding(true)}
+                            className="px-8 py-3 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full font-bold text-white shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 hover:scale-105 transition-all flex items-center gap-2"
+                        >
+                            <Plus className="w-5 h-5" /> Schedule a Movie
+                        </button>
+                    </div>
                 ) : (
                     showtimes.map(st => (
                         <div key={st.id} className="flex items-center justify-between p-4 bg-white/5 rounded-xl border border-white/5 hover:border-white/10 transition-colors">
                             <div className="flex items-center gap-4">
-                                <img src={st.movies?.poster_path} className="w-12 h-16 object-cover rounded" alt="poster" />
+                                <img src={st.movies?.poster_path} className="w-16 h-24 object-cover rounded-lg shadow-lg" alt="poster" />
                                 <div>
-                                    <h4 className="font-bold text-white">{st.movies?.title}</h4>
-                                    <div className="flex gap-4 text-xs text-gray-400 mt-1">
-                                        <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> {new Date(st.show_time).toLocaleDateString()}</span>
-                                        <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {new Date(st.show_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                                        <span className="flex items-center gap-1"><MapPin className="w-3 h-3" /> {st.theaters?.name}</span>
+                                    <h4 className="font-bold text-lg text-white mb-1">{st.movies?.title}</h4>
+
+                                    <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm text-gray-400 mb-2">
+                                        <span className="flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5 text-purple-400" /> {new Date(st.show_time).toLocaleDateString()}</span>
+                                        <span className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5 text-blue-400" /> {new Date(st.show_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                        <span className="flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5 text-pink-400" /> {st.theaters?.name}</span>
+                                    </div>
+
+                                    <div className="flex items-center gap-2">
+                                        <span className="px-2 py-0.5 rounded-md bg-white/10 text-xs font-mono text-gray-300 border border-white/5">
+                                            {st.screen_number || 'Screen 1'}
+                                        </span>
+                                        <span className="px-2 py-0.5 rounded-md bg-green-500/10 text-green-400 text-xs font-bold border border-green-500/20">
+                                            ₹{st.price_standard}
+                                        </span>
+                                        <span className="px-2 py-0.5 rounded-md bg-yellow-500/10 text-yellow-500 text-xs font-bold border border-yellow-500/20">
+                                            VIP: ₹{st.price_vip}
+                                        </span>
                                     </div>
                                 </div>
                             </div>
@@ -190,3 +241,49 @@ const ShowtimeManager = () => {
 };
 
 export default ShowtimeManager;
+
+const CustomDropdown = ({ options, value, onChange, placeholder, labelKey, valueKey }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const selectedOption = options.find(opt => opt[valueKey] === value);
+
+    return (
+        <div className="relative">
+            <button
+                type="button"
+                onClick={() => setIsOpen(!isOpen)}
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-purple-500 text-left flex justify-between items-center"
+            >
+                <span className={selectedOption ? 'text-white' : 'text-gray-500'}>
+                    {selectedOption ? selectedOption[labelKey] : placeholder}
+                </span>
+                <span className="text-gray-500 text-xs">▼</span>
+            </button>
+
+            {isOpen && (
+                <div className="absolute top-full left-0 w-full mt-2 bg-[#1a1a1a] border border-white/10 rounded-xl overflow-hidden z-50 shadow-2xl max-h-60 overflow-y-auto">
+                    {options.length > 0 ? (
+                        options.map(opt => (
+                            <div
+                                key={opt[valueKey]}
+                                onClick={() => {
+                                    onChange(opt[valueKey]);
+                                    setIsOpen(false);
+                                }}
+                                className="px-4 py-3 hover:bg-purple-600/20 hover:text-purple-400 cursor-pointer text-white border-b border-white/5 last:border-none transition-colors"
+                            >
+                                {opt[labelKey]}
+                            </div>
+                        ))
+                    ) : (
+                        <div className="px-4 py-3 text-gray-500 text-center text-sm">No options found</div>
+                    )}
+                </div>
+            )}
+
+            {/* Backdrop to close */}
+            {isOpen && (
+                <div className="fixed inset-0 z-40 bg-transparent" onClick={() => setIsOpen(false)} />
+            )}
+        </div>
+    );
+};

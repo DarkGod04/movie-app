@@ -3,7 +3,7 @@ import MovieCard from '../components/MovieCard'
 import BlurCircle from '../components/BlurCircle'
 import { Search } from 'lucide-react'
 
-const OMDB_API_KEY = "1e43b127";
+const OMDB_API_KEY = import.meta.env.VITE_OMDB_API_KEY;
 
 const FALLBACK_MOVIES = [
   { _id: "fb1", id: "tt0499549", title: "Avatar", poster_path: "https://m.media-amazon.com/images/M/MV5BZDA0OGQxNTItMDZkMC00N2UyLTg3MzMtYTJmNjg3Nzk5MzRiXkEyXkFqcGdeQXVyMjUzOTY1NTc@._V1_SX300.jpg", release_date: "2009", vote_average: "7.9" },
@@ -29,7 +29,7 @@ const Movies = () => {
   // Fetch from TVMaze (Fallback - No Key Required)
   const fetchTVMaze = async (query) => {
     try {
-      console.log("Switching to TVMaze fallback...");
+      // console.log("Switching to TVMaze fallback...");
       const res = await fetch(`https://api.tvmaze.com/search/shows?q=${encodeURIComponent(query)}`);
       const data = await res.json();
 
@@ -114,7 +114,7 @@ const Movies = () => {
     setError(null);
 
     try {
-      console.log(`Fetching: ${queryToUse} page ${pageNum}`);
+      // console.log(`Fetching: ${queryToUse} page ${pageNum}`);
       const res = await fetch(`https://www.omdbapi.com/?s=${encodeURIComponent(queryToUse)}&apikey=${OMDB_API_KEY}&type=movie&page=${pageNum}`);
       const data = await res.json();
 
@@ -164,7 +164,7 @@ const Movies = () => {
     setSearchTerm(query); // Optional: Set search term to show user what's being displayed
 
     try {
-      console.log(`Starting initial fetch for: ${query}`);
+      // console.log(`Starting initial fetch for: ${query}`);
       const promises = [1, 2, 3].map(page =>
         fetch(`https://www.omdbapi.com/?s=${query}&apikey=${OMDB_API_KEY}&type=movie&page=${page}`)
           .then(res => res.json())

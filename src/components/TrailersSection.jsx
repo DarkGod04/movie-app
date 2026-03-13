@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { dummyTrailers } from '../assets/assets';
-import { Play, PlayCircleIcon, X } from 'lucide-react';
+import { Play, PlayCircleIcon, X, ChevronDown, ChevronUp } from 'lucide-react';
 
 const getYouTubeId = (url) => {
   if (!url) return null;
@@ -12,8 +12,18 @@ const getYouTubeId = (url) => {
 const TrailersSection = () => {
   const hasTrailers = Array.isArray(dummyTrailers) && dummyTrailers.length > 0;
 
-  // State for the modal player
+  // State for the modal player and visible count
   const [selectedTrailer, setSelectedTrailer] = useState(null);
+  const [visibleCount, setVisibleCount] = useState(4);
+
+  const handleToggleView = () => {
+    if (visibleCount >= dummyTrailers.length) {
+      setVisibleCount(4); // Reset to 4
+      // Optional: scroll back to top of section if list was very long
+    } else {
+      setVisibleCount(dummyTrailers.length); // Show All
+    }
+  };
 
   if (!hasTrailers) return null;
 
@@ -35,9 +45,9 @@ const TrailersSection = () => {
           </div>
         </div>
 
-        {/* Trailers Grid - Increased Gaps & sleek cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-          {dummyTrailers.map((trailer, idx) => (
+        {/* Trailers Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          {dummyTrailers.slice(0, visibleCount).map((trailer, idx) => (
             <div
               key={idx}
               onClick={() => setSelectedTrailer(trailer)}
@@ -71,6 +81,25 @@ const TrailersSection = () => {
             </div>
           ))}
         </div>
+
+        {/* Show More Button */}
+        {dummyTrailers.length > 4 && (
+          <div className="flex justify-center mt-12">
+            <button
+              onClick={handleToggleView}
+              className="group relative px-8 py-3 rounded-full bg-white/5 border border-white/10 hover:border-pink-500/50 hover:bg-white/10 transition-all duration-300 overflow-hidden"
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-pink-600/20 to-purple-600/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <span className="relative flex items-center gap-2 text-sm font-bold text-white group-hover:text-pink-400 transition-colors uppercase tracking-wider">
+                {visibleCount >= dummyTrailers.length ? (
+                  <>Show Less <ChevronUp className="w-4 h-4" /></>
+                ) : (
+                  <>Show More <ChevronDown className="w-4 h-4" /></>
+                )}
+              </span>
+            </button>
+          </div>
+        )}
 
       </div>
 

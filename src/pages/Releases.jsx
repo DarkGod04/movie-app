@@ -8,21 +8,21 @@ const OMDB_API_KEY = "1e43b127";
 
 // --- Fallback Data for when API Limit is Reached ---
 const FALLBACK_HOLLYWOOD = [
-    { imdbID: "tt15239678", Title: "Dune: Part Two", Year: "2024", Poster: "https://m.media-amazon.com/images/M/MV5BN2QyZGU4ZDctOWMzMy00NTc5LThlOGQtODhmNDI1NmY5YzAwXkEyXkFqcGdeQXVyMDM2NDM2MQ@@._V1_SX300.jpg", Type: "movie" },
-    { imdbID: "tt11315808", Title: "Civil War", Year: "2024", Poster: "https://m.media-amazon.com/images/M/MV5BYTYyODhlODktYjUzNC00NjUyLWI1MzEtYzY2MGJhYWE5YjQ3XkEyXkFqcGdeQXVyMTkxNjUyNQ@@._V1_SX300.jpg", Type: "movie" },
-    { imdbID: "tt14539740", Title: "Godzilla x Kong: The New Empire", Year: "2024", Poster: "https://m.media-amazon.com/images/M/MV5BYWM0MDI1ZmItZTYyNjY2MWJkLTk2ZDYtMjQ0OTMzMmM4M2RjXkEyXkFqcGdeQXVyMTEyMjM2NDc2._V1_SX300.jpg", Type: "movie" },
-    { imdbID: "tt12037194", Title: "Furiosa: A Mad Max Saga", Year: "2024", Poster: "https://m.media-amazon.com/images/M/MV5BNzRiMjg0MzUtNTNhMC00YWQyLWEyY2ItMzQzNDc2ZDMxNjliXkEyXkFqcGdeQXVyMTEyMjM2NDc2._V1_SX300.jpg", Type: "movie" },
-    { imdbID: "tt1684562", Title: "The Fall Guy", Year: "2024", Poster: "https://m.media-amazon.com/images/M/MV5BMjMwMTAzODMtNzQ4ZC00ZGUwLWIwYjQtYjg3M2Q2ODczMzQ2XkEyXkFqcGdeQXVyMTUzMTg2ODkz._V1_SX300.jpg", Type: "movie" },
-    { imdbID: "tt1160419", Title: "Kingdom of the Planet of the Apes", Year: "2024", Poster: "https://m.media-amazon.com/images/M/MV5BNDUyNWE5NDQtZTQxYy00NDg0LTljMWEtMWM4ZGYxMGVkMDlhXkEyXkFqcGdeQXVyMTEyMjM2NDc2._V1_SX300.jpg", Type: "movie" }
+    { imdbID: "tt15239678", Title: "Dune: Part Two", Year: "2024", Poster: "https://upload.wikimedia.org/wikipedia/en/4/4a/Dune_Part_Two_poster.jpg", Type: "movie" },
+    { imdbID: "tt11315808", Title: "Civil War", Year: "2024", Poster: "https://upload.wikimedia.org/wikipedia/en/3/3b/Civil_War_%282024_film%29_poster.jpg", Type: "movie" },
+    { imdbID: "tt14539740", Title: "Godzilla x Kong: The New Empire", Year: "2024", Poster: "https://upload.wikimedia.org/wikipedia/en/b/be/Godzilla_x_kong_the_new_empire_poster.jpg", Type: "movie" },
+    { imdbID: "tt12037194", Title: "Furiosa: A Mad Max Saga", Year: "2024", Poster: "https://upload.wikimedia.org/wikipedia/en/d/d4/Furiosa_A_Mad_Max_Saga_poster.jpg", Type: "movie" },
+    { imdbID: "tt1684562", Title: "The Fall Guy", Year: "2024", Poster: "https://upload.wikimedia.org/wikipedia/en/9/90/The_Fall_Guy_2024_poster.jpg", Type: "movie" },
+    { imdbID: "tt1160419", Title: "Kingdom of the Planet of the Apes", Year: "2024", Poster: "https://upload.wikimedia.org/wikipedia/en/a/a8/Kingdom_of_the_Planet_of_the_Apes_poster.jpg", Type: "movie" }
 ];
 
 const FALLBACK_BOLLYWOOD = [
-    { imdbID: "tt22409552", Title: "Fighter", Year: "2024", Poster: "https://m.media-amazon.com/images/M/MV5BNzY2IzU2NjctZDc2ZC00MmY1LWJiYjktMTk5ZjEzYjA0ZDAyXkEyXkFqcGdeQXVyODQ5NDUwMDk@._V1_SX300.jpg", Type: "movie" },
-    { imdbID: "tt26655182", Title: "Shaitaan", Year: "2024", Poster: "https://m.media-amazon.com/images/M/MV5BNzRiZTRhZGMtYjFlNS00Y2FkLWE4MjktYmQ0ZTZhNjE3NjExXkEyXkFqcGdeQXVyODE5NzE3OTE@._V1_SX300.jpg", Type: "movie" },
-    { imdbID: "tt14992822", Title: "Crew", Year: "2024", Poster: "https://m.media-amazon.com/images/M/MV5BM2QzM2VjOGQtMzhiMy00OGFkLTg4YzAtN2EyYWY1MTcwNTI5XkEyXkFqcGdeQXVyODE5NzE3OTE@._V1_SX300.jpg", Type: "movie" },
-    { imdbID: "tt9663764", Title: "Bade Miyan Chote Miyan", Year: "2024", Poster: "https://m.media-amazon.com/images/M/MV5BYzA0NTY4MjctNTkzNS00ZjAwLTg3YTctY2I1MzExYTQ4NDJhXkEyXkFqcGdeQXVyODE5NzE3OTE@._V1_SX300.jpg", Type: "movie" },
-    { imdbID: "tt10839218", Title: "Maidaan", Year: "2024", Poster: "https://m.media-amazon.com/images/M/MV5BYmQ0ZmVjNmYtNGUzZS00NmRiLWI5NTgtYTYxOWVkZMzVkYTJiXkEyXkFqcGdeQXVyMTUzOTcyODA5._V1_SX300.jpg", Type: "movie" },
-    { imdbID: "tt15729350", Title: "Teri Baaton Mein Aisa Uljha Jiya", Year: "2024", Poster: "https://m.media-amazon.com/images/M/MV5BMjA2M2Y5NzQtOTIwYy00YmI1LWI2MTctMmI2M2Q1OGJlMzQzXkEyXkFqcGdeQXVyODE5NzE3OTE@._V1_SX300.jpg", Type: "movie" }
+    { imdbID: "tt22409552", Title: "Fighter", Year: "2024", Poster: "https://upload.wikimedia.org/wikipedia/en/d/df/Fighter_film_poster.jpg", Type: "movie" },
+    { imdbID: "tt26655182", Title: "Shaitaan", Year: "2024", Poster: "https://upload.wikimedia.org/wikipedia/en/7/7b/Shaitaan_film_poster.jpg", Type: "movie" },
+    { imdbID: "tt14992822", Title: "Crew", Year: "2024", Poster: "https://upload.wikimedia.org/wikipedia/en/3/30/Crew_film_poster.jpg", Type: "movie" },
+    { imdbID: "tt9663764", Title: "Bade Miyan Chote Miyan", Year: "2024", Poster: "https://upload.wikimedia.org/wikipedia/en/d/d3/Bade_Miyan_Chote_Miyan_2024_poster.jpg", Type: "movie" },
+    { imdbID: "tt10839218", Title: "Maidaan", Year: "2024", Poster: "https://upload.wikimedia.org/wikipedia/en/3/3a/Maidaan_film_poster.jpg", Type: "movie" },
+    { imdbID: "tt15729350", Title: "Teri Baaton Mein Aisa Uljha Jiya", Year: "2024", Poster: "https://upload.wikimedia.org/wikipedia/en/3/39/Teri_Baaton_Mein_Aisa_Uljha_Jiya_poster.jpg", Type: "movie" }
 ];
 
 const ReleaseSection = ({ title, movies, loading, navigate }) => {
@@ -75,6 +75,8 @@ const ReleaseSection = ({ title, movies, loading, navigate }) => {
 };
 
 const ReleaseCard = ({ movie, navigate }) => {
+    const [imgError, setImgError] = useState(false);
+
     return (
         <motion.div
             whileHover={{ y: -10, scale: 1.02 }}
@@ -83,16 +85,21 @@ const ReleaseCard = ({ movie, navigate }) => {
         >
             <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-60 z-10" />
 
-            {movie.Poster !== "N/A" ? (
+            {!imgError && movie.Poster !== "N/A" ? (
                 <img
                     src={movie.Poster}
                     alt={movie.Title}
+                    onError={() => setImgError(true)}
                     className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700"
                 />
             ) : (
-                <div className="w-full h-full flex flex-col items-center justify-center bg-gray-900 text-gray-500">
-                    <StarIcon className="w-12 h-12 mb-2" />
-                    <span className="text-xs uppercase font-bold">No Poster</span>
+                <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-gray-900 to-black text-center p-4">
+                    <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform text-pink-500">
+                        <PlayCircle className="w-8 h-8 opacity-80" />
+                    </div>
+                    <h3 className="text-xl font-black text-white/20 uppercase leading-none break-words w-full px-2" style={{ fontSize: 'clamp(1.5rem, 5vw, 2.5rem)' }}>
+                        {movie.Title.substring(0, 10)}
+                    </h3>
                 </div>
             )}
 

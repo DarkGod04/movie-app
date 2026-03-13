@@ -1,12 +1,82 @@
 import React, { useEffect, useState } from "react";
-import { Heart, PlayCircleIcon, StarIcon, Clock, Globe, Ticket, ChevronLeft, ChevronRight } from "lucide-react";
+import { Heart, PlayCircleIcon, StarIcon, Clock, Globe, Ticket, ChevronLeft, ChevronRight, MapPin } from "lucide-react";
 import { useParams, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useAuth } from "../context/AuthContext";
 import { ensureMovieExists, ensureShowtimesForMovie, fetchTheaters, checkIsFavorite, toggleFavorite } from "../lib/db";
 import timeFormat from "../assets/lib/timeFormat";
+import SEO from "../components/SEO";
 
-const OMDB_API_KEY = "1e43b127";
+const OMDB_API_KEY = import.meta.env.VITE_OMDB_API_KEY;
+
+// Fallback data for specific IDs when OMDb fails or limit reached
+const FALLBACK_MOVIES = {
+  "tt15729350": {
+    imdbID: "tt15729350",
+    Title: "Teri Baaton Mein Aisa Uljha Jiya",
+    Poster: "https://upload.wikimedia.org/wikipedia/en/3/39/Teri_Baaton_Mein_Aisa_Uljha_Jiya_poster.jpg",
+    Plot: "A robotics engineer falls in love with an AI robot, leading to comical and emotional chaos.",
+    imdbRating: "6.5",
+    Released: "09 Feb 2024",
+    Runtime: "143 min",
+    Genre: "Comedy, Romance, Sci-Fi",
+    Director: "Amit Joshi, Aradhana Sah",
+    Writer: "Amit Joshi, Aradhana Sah",
+    Language: "Hindi"
+  },
+  "tt22409552": {
+    imdbID: "tt22409552",
+    Title: "Fighter",
+    Poster: "https://upload.wikimedia.org/wikipedia/en/d/df/Fighter_film_poster.jpg",
+    Plot: "Top IAF aviators come together in the face of imminent danger, forming Air Dragons, to fight for the nation.",
+    imdbRating: "7.0",
+    Released: "25 Jan 2024",
+    Runtime: "166 min",
+    Genre: "Action, Thriller",
+    Director: "Siddharth Anand",
+    Writer: "Ramon Chibb, Siddharth Anand",
+    Language: "Hindi"
+  },
+  "tt15239678": {
+    imdbID: "tt15239678",
+    Title: "Dune: Part Two",
+    Poster: "https://upload.wikimedia.org/wikipedia/en/4/4a/Dune_Part_Two_poster.jpg",
+    Plot: "Paul Atreides unites with Chani and the Fremen while on a warpath of revenge against the conspirators who destroyed his family.",
+    imdbRating: "8.8",
+    Released: "01 Mar 2024",
+    Runtime: "166 min",
+    Genre: "Action, Adventure, Drama",
+    Director: "Denis Villeneuve",
+    Writer: "Denis Villeneuve, Jon Spaihts",
+    Language: "English"
+  },
+  "tt11315808": {
+    imdbID: "tt11315808",
+    Title: "Civil War",
+    Poster: "https://upload.wikimedia.org/wikipedia/en/3/3b/Civil_War_%282024_film%29_poster.jpg",
+    Plot: "A journey across a dystopian future America, following a team of military-embedded journalists as they race against time to reach DC before rebel factions descend upon the White House.",
+    imdbRating: "7.4",
+    Released: "12 Apr 2024",
+    Runtime: "109 min",
+    Genre: "Action, Thriller",
+    Director: "Alex Garland",
+    Writer: "Alex Garland",
+    Language: "English"
+  },
+  "tt26655182": {
+    imdbID: "tt26655182",
+    Title: "Shaitaan",
+    Poster: "https://upload.wikimedia.org/wikipedia/en/7/7b/Shaitaan_film_poster.jpg",
+    Plot: "A timeless tale of battle between good and evil with a family embodying the forces of righteousness while a man symbolizes malevolence.",
+    imdbRating: "6.8",
+    Released: "08 Mar 2024",
+    Runtime: "132 min",
+    Genre: "Horror, Thriller",
+    Director: "Vikas Bahl",
+    Writer: "Aamil Keeyan Khan, Krishnadev Yagnik",
+    Language: "Hindi"
+  }
+};
 
 const MovieDetail = () => {
   const { id } = useParams();
@@ -37,6 +107,13 @@ const MovieDetail = () => {
     setIsLoadingInfo(true);
     setNotFound(false);
 
+    // Check locally first for fallback data (instant load + offline support)
+    if (FALLBACK_MOVIES[id]) {
+      processMovieData(FALLBACK_MOVIES[id]);
+      setIsLoadingInfo(false);
+      return;
+    }
+
     const url = `https://www.omdbapi.com/?i=${id}&apikey=${OMDB_API_KEY}&plot=full`;
 
     try {
@@ -44,84 +121,99 @@ const MovieDetail = () => {
       const data = await res.json();
 
       if (data.Response === "True") {
-        setOmdbData(data);
-
-        // 2. Local State Object (for UI)
-        const movieData = {
-          _id: data.imdbID,
-          id: data.imdbID,
-          title: data.Title,
-          backdrop_path: data.Poster !== "N/A" ? data.Poster : "https://via.placeholder.com/1920x1080?text=No+Backdrop",
-          poster_path: data.Poster !== "N/A" ? data.Poster : "https://via.placeholder.com/300x450?text=No+Poster",
-          vote_average: data.imdbRating,
-          runtime: parseInt(data.Runtime) || 0,
-          release_date: data.Released,
-          overview: data.Plot,
-          original_language: data.Language ? data.Language.split(',')[0] : "EN",
-          genres: data.Genre ? data.Genre.split(',').map((g, i) => ({ id: i, name: g.trim() })) : []
-        };
-
-        setShow({ movie: movieData });
-
-        // Check if favorite
-        if (user) {
-          try {
-            const favStatus = await checkIsFavorite(user.id, data.imdbID);
-            setIsFavorite(favStatus);
-          } catch (e) {
-            console.error("Favorite check failed", e);
-          }
-        }
-
-        // --- BACKEND INTEGRATION SCRIPT ---
-        try {
-          // A. Ensure Movie exists in DB
-          const dbMovieId = await ensureMovieExists(data);
-
-          // B. Get Theaters
-          const theaters = await fetchTheaters();
-
-          // C. Get/Generate Showtimes
-          const dateStr = dates[selectedDate].fullDate;
-          const theaterIds = theaters ? theaters.map(t => t.id) : [];
-
-          if (theaterIds.length > 0) {
-            const showtimes = await ensureShowtimesForMovie(dbMovieId, theaterIds, dateStr);
-            setShow(prev => ({ ...prev, showtimes, dbMovieId }));
-          }
-        } catch (dbError) {
-          console.error("Supabase Error:", dbError);
-        }
-
-        // Fetch Related
-        const firstGenre = data.Genre ? data.Genre.split(",")[0].trim() : "Action";
-        try {
-          const relatedRes = await fetch(`https://www.omdbapi.com/?s=${encodeURIComponent(firstGenre)}&apikey=${OMDB_API_KEY}&type=movie`);
-          const relatedData = await relatedRes.json();
-          if (relatedData.Response === "True") {
-            const transformedRelated = relatedData.Search
-              .filter(m => m.imdbID !== data.imdbID)
-              .slice(0, 5)
-              .map(m => ({
-                id: m.imdbID,
-                title: m.Title,
-                poster_path: m.Poster !== "N/A" ? m.Poster : "https://via.placeholder.com/300x450?text=No+Poster",
-                release_date: m.Year
-              }));
-            setRelatedMovies(transformedRelated);
-          }
-        } catch (e) {
-          console.warn("Related movies fetch failed", e);
-        }
-
+        processMovieData(data);
       } else {
-        setNotFound(true);
+        // Double check fallback if not found in API (redundant but safe)
+        if (FALLBACK_MOVIES[id]) {
+          processMovieData(FALLBACK_MOVIES[id]);
+        } else {
+          setNotFound(true);
+        }
       }
     } catch (err) {
       console.error("Fetch Error:", err);
-      setNotFound(true);
+      // Fallback on network error
+      if (FALLBACK_MOVIES[id]) {
+        processMovieData(FALLBACK_MOVIES[id]);
+      } else {
+        setNotFound(true);
+      }
     } finally {
       setIsLoadingInfo(false);
+    }
+  };
+
+  const processMovieData = async (data) => {
+    setOmdbData(data);
+
+    // 2. Local State Object (for UI)
+    const movieData = {
+      _id: data.imdbID,
+      id: data.imdbID,
+      title: data.Title,
+      backdrop_path: data.Poster !== "N/A" ? data.Poster : "https://via.placeholder.com/1920x1080?text=No+Backdrop",
+      poster_path: data.Poster !== "N/A" ? data.Poster : "https://via.placeholder.com/300x450?text=No+Poster",
+      vote_average: data.imdbRating && data.imdbRating !== "N/A" ? data.imdbRating : "7.5", // Default rating
+      runtime: parseInt(data.Runtime) || 120, // Default runtime
+      release_date: data.Released,
+      overview: data.Plot,
+      original_language: data.Language ? data.Language.split(',')[0] : "EN",
+      genres: data.Genre ? data.Genre.split(',').map((g, i) => ({ id: i, name: g.trim() })) : []
+    };
+
+    setShow({ movie: movieData });
+
+    // Check if favorite
+    if (user) {
+      try {
+        const favStatus = await checkIsFavorite(user.id, data.imdbID);
+        setIsFavorite(favStatus);
+      } catch (e) {
+        console.error("Favorite check failed", e);
+      }
+    }
+
+    // --- BACKEND INTEGRATION SCRIPT ---
+    try {
+      // A. Ensure Movie exists in DB
+      const dbMovieId = await ensureMovieExists(data);
+
+      // B. Get Theaters
+      const theaters = await fetchTheaters();
+
+      // C. Get/Generate Showtimes
+      const dateStr = dates[selectedDate].fullDate;
+      const theaterIds = theaters ? theaters.map(t => t.id) : [];
+
+      if (theaterIds.length > 0) {
+        const showtimes = await ensureShowtimesForMovie(dbMovieId, theaterIds, dateStr);
+        setShow(prev => ({ ...prev, showtimes, dbMovieId }));
+      }
+    } catch (dbError) {
+      console.error("Supabase Error:", dbError);
+    }
+
+    // Fetch Related
+    const firstGenre = data.Genre ? data.Genre.split(",")[0].trim() : "Action";
+    // Only attempt fetch if key is valid/not limited, otherwise skip or use random?
+    // For now we try, if it fails we just don't show related.
+    try {
+      const relatedRes = await fetch(`https://www.omdbapi.com/?s=${encodeURIComponent(firstGenre)}&apikey=${OMDB_API_KEY}&type=movie`);
+      const relatedData = await relatedRes.json();
+      if (relatedData.Response === "True") {
+        const transformedRelated = relatedData.Search
+          .filter(m => m.imdbID !== data.imdbID)
+          .slice(0, 5)
+          .map(m => ({
+            id: m.imdbID,
+            title: m.Title,
+            poster_path: m.Poster !== "N/A" ? m.Poster : "https://via.placeholder.com/300x450?text=No+Poster",
+            release_date: m.Year
+          }));
+        setRelatedMovies(transformedRelated);
+      }
+    } catch (e) {
+      console.warn("Related movies fetch failed", e);
     }
   };
 
@@ -167,6 +259,12 @@ const MovieDetail = () => {
 
   return (
     <div className="relative min-h-screen bg-black text-white selection:bg-pink-500 selection:text-white pb-20 overflow-hidden">
+      <SEO
+        title={movie.title}
+        description={`Book tickets for ${movie.title}. ${movie.overview?.slice(0, 150)}...`}
+        image={movie.poster_path}
+        url={`/movies/${movie.id}`}
+      />
 
       {/* Global Ambient Background */}
       <div className="absolute top-0 left-0 w-full h-[500px] bg-gradient-to-b from-purple-900/20 to-transparent pointer-events-none" />
@@ -318,85 +416,125 @@ const MovieDetail = () => {
               <h3 className="text-3xl font-bold text-white tracking-tight">Choose Date</h3>
             </div>
 
-            <div className="relative p-8 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-xl flex flex-col md:flex-row items-center justify-between gap-8 shadow-2xl overflow-hidden group">
+            <div className="relative p-8 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-xl flex flex-col gap-10 shadow-2xl overflow-hidden group">
               {/* Decorative Glow */}
               <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1/2 h-full bg-pink-500/5 blur-[80px] pointer-events-none" />
 
-              {/* Date Carousel */}
-              <div className="flex items-center gap-4 w-full md:w-auto">
-                <button className="p-3 rounded-full bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-colors">
-                  <ChevronLeft className="w-6 h-6" />
-                </button>
+              {/* Date Carousel - Centered & Prominent */}
+              <div className="w-full flex flex-col items-center gap-6 z-10">
+                <div className="text-gray-400 text-sm font-medium uppercase tracking-widest">Select a Date</div>
 
-                <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide mask-linear-fade">
-                  {dates.map((d, i) => (
-                    <button
-                      key={i}
-                      onClick={() => setSelectedDate(i)}
-                      className={`relative flex flex-col items-center justify-center min-w-[4.5rem] h-20 rounded-2xl border transition-all duration-300 group/date
-                            ${selectedDate === i
-                          ? "bg-gradient-to-br from-pink-600 to-purple-700 border-transparent shadow-[0_0_20px_rgba(236,72,153,0.4)] scale-105"
-                          : "bg-white/5 border-white/10 hover:border-pink-500/50 hover:bg-white/10"
-                        }`}
-                    >
-                      <span className={`text-xs font-bold uppercase tracking-wider mb-1 ${selectedDate === i ? "text-white" : "text-gray-400 group-hover/date:text-gray-200"}`}>
-                        {d.day}
-                      </span>
-                      <span className={`text-xl font-black ${selectedDate === i ? "text-white" : "text-white"}`}>
-                        {d.date}
-                      </span>
-                    </button>
-                  ))}
+                <div className="flex items-center justify-center gap-4 w-full">
+                  <button
+                    onClick={() => {
+                      const container = document.getElementById('date-scroll-container');
+                      if (container) container.scrollBy({ left: -200, behavior: 'smooth' });
+                    }}
+                    className="hidden md:flex p-3 rounded-full bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-colors flex-shrink-0"
+                  >
+                    <ChevronLeft className="w-6 h-6" />
+                  </button>
+
+                  <div
+                    id="date-scroll-container"
+                    className="flex gap-4 overflow-x-auto pb-4 px-4 scrollbar-hide snap-x snap-mandatory max-w-3xl"
+                  >
+                    {dates.map((d, i) => (
+                      <button
+                        key={i}
+                        onClick={() => setSelectedDate(i)}
+                        className={`relative flex flex-col items-center justify-center min-w-[5.5rem] h-24 rounded-2xl border transition-all duration-300 snap-center flex-shrink-0 group/date
+                                ${selectedDate === i
+                            ? "bg-gradient-to-br from-pink-600 to-purple-700 border-transparent shadow-[0_0_20px_rgba(236,72,153,0.4)] scale-110 z-10"
+                            : "bg-white/5 border-white/10 hover:border-pink-500/50 hover:bg-white/10 hover:scale-105"
+                          }`}
+                      >
+                        <span className={`text-xs font-bold uppercase tracking-wider mb-2 ${selectedDate === i ? "text-white" : "text-gray-400 group-hover/date:text-gray-200"}`}>
+                          {d.day}
+                        </span>
+                        <span className={`text-2xl font-black ${selectedDate === i ? "text-white" : "text-white"}`}>
+                          {d.date}
+                        </span>
+                        {i === 0 && <span className="absolute -top-2 left-1/2 -translate-x-1/2 text-[10px] font-bold bg-green-500 text-black px-2 py-0.5 rounded-full whitespace-nowrap">TODAY</span>}
+                      </button>
+                    ))}
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      const container = document.getElementById('date-scroll-container');
+                      if (container) container.scrollBy({ left: 200, behavior: 'smooth' });
+                    }}
+                    className="hidden md:flex p-3 rounded-full bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-colors flex-shrink-0"
+                  >
+                    <ChevronRight className="w-6 h-6" />
+                  </button>
                 </div>
-
-                <button className="p-3 rounded-full bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-colors">
-                  <ChevronRight className="w-6 h-6" />
-                </button>
               </div>
 
-              {/* Showtimes List */}
-              <div className="w-full mt-6 space-y-4">
+              {/* Showtimes List - Full Width Below */}
+              <div className="w-full border-t border-white/5 pt-8">
                 {show?.showtimes && show.showtimes.length > 0 ? (
-                  // Group by Theater
-                  Object.values(show.showtimes.reduce((acc, curr) => {
-                    if (!acc[curr.theaters.id]) acc[curr.theaters.id] = { theater: curr.theaters, times: [] };
-                    acc[curr.theaters.id].times.push(curr);
-                    return acc;
-                  }, {})).map((group, idx) => (
-                    <div key={idx} className="bg-black/20 rounded-xl p-4">
-                      <h4 className="text-white font-bold mb-3 flex justify-between">
-                        {group.theater.name}
-                        <span className="text-xs text-gray-400 font-normal">{group.theater.location}</span>
-                      </h4>
-                      <div className="flex flex-wrap gap-3">
-                        {group.times.map((t) => {
-                          const dateObj = new Date(t.show_time);
-                          const timeStr = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                  <div className="grid grid-cols-1 gap-6">
+                    {/* Group by Theater */}
+                    {Object.values(show.showtimes.reduce((acc, curr) => {
+                      if (!acc[curr.theaters.id]) acc[curr.theaters.id] = { theater: curr.theaters, times: [] };
+                      acc[curr.theaters.id].times.push(curr);
+                      return acc;
+                    }, {})).map((group, idx) => (
+                      <div key={idx} className="flex flex-col md:flex-row gap-6 p-6 rounded-2xl bg-black/20 hover:bg-black/40 border border-white/5 transition-colors">
 
-                          return (
-                            <button
-                              key={t.id}
-                              onClick={() => {
-                                navigate(`/movies/${movie.id}/${dates[selectedDate].fullDate}`, {
-                                  state: {
-                                    movie: { ...movie },
-                                    showtime: t,
-                                    date: dates[selectedDate].fullDate
-                                  }
-                                });
-                              }}
-                              className="px-4 py-2 bg-white/5 hover:bg-pink-600 border border-white/10 hover:border-pink-500 rounded-lg text-sm text-gray-300 hover:text-white transition-all shadow-sm hover:shadow-[0_0_15px_rgba(236,72,153,0.4)]"
-                            >
-                              {timeStr}
-                            </button>
-                          )
-                        })}
+                        {/* Theater Info */}
+                        <div className="md:w-1/3 flex flex-col justify-center">
+                          <h4 className="text-xl font-bold text-white mb-2 flex items-center gap-2">
+                            <MapPin className="w-5 h-5 text-pink-500" />
+                            {group.theater.name}
+                          </h4>
+                          <p className="text-sm text-gray-400 pl-7">{group.theater.location || "City Center"}</p>
+                          <div className="flex gap-3 mt-4 pl-7">
+                            <span className="text-xs px-2 py-1 rounded bg-white/5 text-gray-400 border border-white/5">Dolby Atmos</span>
+                            <span className="text-xs px-2 py-1 rounded bg-white/5 text-gray-400 border border-white/5">Recliners</span>
+                          </div>
+                        </div>
+
+                        {/* Times Grid */}
+                        <div className="md:w-2/3 flex flex-wrap items-center gap-3">
+                          {group.times.map((t) => {
+                            const dateObj = new Date(t.show_time);
+                            const timeStr = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                            return (
+                              <button
+                                key={t.id}
+                                onClick={() => {
+                                  navigate(`/movies/${movie.id}/${dates[selectedDate].fullDate}`, {
+                                    state: {
+                                      movie: { ...movie },
+                                      showtime: t,
+                                      date: dates[selectedDate].fullDate
+                                    }
+                                  });
+                                }}
+                                className="group/time relative px-6 py-3 rounded-xl bg-white/5 hover:bg-gradient-to-r hover:from-pink-600 hover:to-purple-600 border border-white/10 hover:border-transparent transition-all overflow-hidden"
+                              >
+                                <span className="relative z-10 text-base font-bold text-white tracking-wider">{timeStr}</span>
+                                <div className="absolute inset-0 bg-white/20 blur-lg opacity-0 group-hover/time:opacity-100 transition-opacity" />
+                              </button>
+                            )
+                          })}
+                        </div>
+
                       </div>
-                    </div>
-                  ))
+                    ))}
+                  </div>
                 ) : (
-                  <div className="text-center py-4 text-gray-400">
-                    {isLoadingInfo ? "Loading showtimes..." : "No showtimes available for this date."}
+                  <div className="flex flex-col items-center justify-center py-12 text-center space-y-4">
+                    <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center">
+                      <Clock className="w-8 h-8 text-gray-600" />
+                    </div>
+                    <div>
+                      <h4 className="text-lg font-bold text-gray-300">No shows available</h4>
+                      <p className="text-gray-500 text-sm">Please select another date or check back later.</p>
+                    </div>
                   </div>
                 )}
               </div>
